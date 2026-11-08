@@ -11,17 +11,19 @@ export class Atmosphere {
   }
 
   init() {
-    // 1. 대기 안개 (서정적인 에메랄드 숲 톤)
-    const fogColor = new THREE.Color(0xd6e8d2);
+    // 차분한 딥 그린 감성을 유지하면서 살짝 더 맑고 화사하게 밝힌 조도
+    const fogColor = new THREE.Color(0xa2bea9);
     this.scene.background = fogColor;
-    this.scene.fog = new THREE.FogExp2(fogColor, 0.016);
+    
+    // 안개 시작 거리를 48m로 넉넉히 밀어 캐릭터 주변을 한결 깨끗하고 시원하게
+    this.scene.fog = new THREE.Fog(fogColor, 48, 115);
 
-    // 2. 부드러운 반구광 (Hemisphere Light)
-    const hemiLight = new THREE.HemisphereLight(0xdff0d8, 0x5a6344, 0.7);
+    // 앰비언트 라이트를 부드럽게 올려(0.78) 그늘의 어두움을 자연스럽게 보정
+    const hemiLight = new THREE.HemisphereLight(0xa5cca9, 0x2b4a2e, 0.78);
     this.scene.add(hemiLight);
 
-    // 3. 따스한 햇살 (Directional Sun Light)
-    const sunLight = new THREE.DirectionalLight(0xfff5dd, 1.25);
+    // 따스한 햇살 밝기(1.18)로 기분 좋은 자연광 채광
+    const sunLight = new THREE.DirectionalLight(0xfff3db, 1.18);
     sunLight.position.set(45, 60, 30);
     sunLight.castShadow = true;
     sunLight.shadow.mapSize.width = 2048;

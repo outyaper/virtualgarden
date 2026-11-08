@@ -85,7 +85,7 @@ export class SoundManager {
     lfo.start();
 
     this.windGain = this.ctx.createGain();
-    this.windGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    this.windGain.gain.setValueAtTime(0.0, this.ctx.currentTime); // 처음 시작 시 무음
 
     whiteNoiseSource.connect(this.windFilter);
     this.windFilter.connect(this.windGain);
@@ -126,11 +126,11 @@ export class SoundManager {
   // 3. 대나무 잎 서걱거림 (간헐적 하이패스 마찰음)
   setupBambooRustle() {
     this.bambooGain = this.ctx.createGain();
-    this.bambooGain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    this.bambooGain.gain.setValueAtTime(0.0, this.ctx.currentTime); // 처음 시작 시 무음
     this.bambooGain.connect(this.masterGain);
 
     const triggerRustle = () => {
-      if (!this.ctx || this.isMuted) return;
+      if (!this.ctx || this.isMuted || !this.isWindFocusActive) return;
       const now = this.ctx.currentTime;
       const dur = 1.2 + Math.random() * 1.5;
 
@@ -170,7 +170,7 @@ export class SoundManager {
   // 4. 새 지저귐 사운드 (Frequency Sweep Synthesizer)
   setupBirdChirps() {
     this.birdsGain = this.ctx.createGain();
-    this.birdsGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    this.birdsGain.gain.setValueAtTime(0.08, this.ctx.currentTime); // 평상시에는 작고 은은하게
     this.birdsGain.connect(this.masterGain);
 
     const scheduleNextBird = () => {
@@ -219,14 +219,13 @@ export class SoundManager {
   setWindFocus(active) {
     if (!this.ctx) return;
     const now = this.ctx.currentTime;
-    this.targetWindIntensity = active ? 2.6 : 1.0;
-    this.windIntensity = this.targetWindIntensity;
+    this.isWindFocusActive = active;
+    this.windIntensity = active ? 2.6 : 1.0;
 
-    const targetGain = active ? 0.7 : 0.35;
-    const targetFreq = active ? 550 : 380;
-    this.windGain.gain.setTargetAtTime(targetGain, now, 1.2);
-    this.windFilter.frequency.setTargetAtTime(targetFreq, now, 1.5);
-    this.bambooGain.gain.setTargetAtTime(active ? 0.45 : 0.25, now, 1.0);
+    // 자리에 앉아 바람소리를 선택했을 때만 서서히 페이드인 (끄면 즉시 페이드아웃 무음)
+    this.windGain.gain.setTargetAtTime(active ? 0.65 : 0.0, now, 1.0);
+    this.windFilter.frequency.setTargetAtTime(active ? 520 : 380, now, 1.2);
+    this.bambooGain.gain.setTargetAtTime(active ? 0.35 : 0.0, now, 1.0);
   }
 
   // 힐링 인터랙션: 눈감기 (명상 모드)
@@ -235,14 +234,19 @@ export class SoundManager {
     this.isMeditation = active;
     const now = this.ctx.currentTime;
     if (active) {
-      // 앰비언스를 포근하게 부드러운 톤으로 강조
-      this.windGain.gain.setTargetAtTime(0.4, now, 1.5);
-      this.riverGain.gain.setTargetAtTime(0.28, now, 1.5);
-      this.birdsGain.gain.setTargetAtTime(0.35, now, 1.5);
+      // 눈감고 감상 시: 새소리를 지금 크기(0.35)만큼 풍성하고 맑게 증폭
+      this.birdsGain.gain.setTargetAtTime(0.35, now, 1.2);
+      this.riverGain.gain.setTargetAtTime(0.25, now, 1.2);
+      if (this.isWindFocusActive) {
+        this.windGain.gain.setTargetAtTime(0.65, now, 1.2);
+      }
     } else {
-      this.windGain.gain.setTargetAtTime(0.35, now, 1.0);
+      // 눈을 뜨면: 새소리는 다시 원래의 작은 볼륨(0.08)으로 복귀
+      this.birdsGain.gain.setTargetAtTime(0.08, now, 1.0);
       this.riverGain.gain.setTargetAtTime(0.2, now, 1.0);
-      this.birdsGain.gain.setTargetAtTime(0.3, now, 1.0);
+      if (!this.isWindFocusActive) {
+        this.windGain.gain.setTargetAtTime(0.0, now, 1.0);
+      }
     }
   }
 

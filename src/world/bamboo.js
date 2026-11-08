@@ -7,10 +7,10 @@ export class BambooForest {
 
     // 대나무 충돌체 위치 배열 [{x, z, radius}]
     this.colliders = [];
-    this.stalkRadius = 0.16; // 대나무 기둥 반경
+    this.stalkRadius = 0.07; // 늘씬하고 섬세한 대나무 줄기 반경
 
-    // 대나무 간 최소 거리 (캐릭터가 끼이지 않도록 1.9m 이상 유지)
-    this.minDistance = 1.9;
+    // 대나무 간 최소 거리 (훨씬 촘촘하고 빽빽한 군락)
+    this.minDistance = 1.25;
 
     this.stalkMesh = null;
     this.foliageMesh = null;
@@ -23,22 +23,22 @@ export class BambooForest {
   }
 
   init() {
-    const height = 14;
-    const stalkGeo = new THREE.CylinderGeometry(this.stalkRadius, this.stalkRadius + 0.04, height, 8, 12);
+    const height = 15;
+    const stalkGeo = new THREE.CylinderGeometry(this.stalkRadius * 0.85, this.stalkRadius, height, 8, 14);
     stalkGeo.translate(0, height / 2, 0);
 
     const stalkMat = new THREE.MeshStandardMaterial({
-      color: 0x4d7c2a,
-      roughness: 0.6,
-      metalness: 0.1
+      color: 0x274a24,
+      roughness: 0.65,
+      metalness: 0.08
     });
     this.injectWindShader(stalkMat, height);
 
-    const foliageGeo = new THREE.ConeGeometry(2.4, 6.0, 6, 4);
-    foliageGeo.translate(0, height - 1.0, 0);
+    const foliageGeo = new THREE.ConeGeometry(1.6, 5.2, 6, 4);
+    foliageGeo.translate(0, height - 0.8, 0);
 
     const foliageMat = new THREE.MeshStandardMaterial({
-      color: 0x6ca337,
+      color: 0x487a2d,
       roughness: 0.7,
       side: THREE.DoubleSide
     });
@@ -103,7 +103,7 @@ export class BambooForest {
     const minZ = -72;
     const maxZ = 72;
 
-    const maxAttempts = 12000;
+    const maxAttempts = 35000;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const x = minX + Math.random() * (maxX - minX);
@@ -112,12 +112,12 @@ export class BambooForest {
       // 1) 강변 인도 및 제방 회피 (x < -9.5 금지)
       if (x < -9.5) continue;
 
-      // 2) 산책로(주 산책로, 숲속 오솔길, 태화강 연결로) 회피: 최소 2.2m 이상 거리 확보
+      // 2) 산책로(주 산책로, 숲속 오솔길, 태화강 연결로) 회피: 최소 2.0m 이상 거리 확보
       const distToPath = this.terrain.getDistanceToNearestPath(x, z);
-      if (distToPath < 2.2) continue;
+      if (distToPath < 2.0) continue;
 
-      // 3) 벤치 주변 회피 (벤치 위치: x=-6.5, z=4.0)
-      const distToBench = Math.sqrt((x - (-6.5)) ** 2 + (z - 4.0) ** 2);
+      // 3) 벤치 주변 회피
+      const distToBench = Math.sqrt((x - (-10.0)) ** 2 + (z - 3.0) ** 2);
       if (distToBench < 3.8) continue;
 
       // 4) 다른 대나무와의 최소 간격 검사 (최소 1.9m 보장)

@@ -6,15 +6,8 @@
   <title>태화강 십리대숲 힐링 산책 공간</title>
   <link rel="stylesheet" href="style.css">
   
-  <!-- Modern ES Module Importmap (Three.js r160) -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-      }
-    }
-  </script>
+  <!-- Standalone Three.js Global Library (file:// 직접 열기 및 웹 호스팅 완벽 지원) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 <body>
   <!-- 3D WebGL 캔버스 -->
@@ -76,7 +69,7 @@
     </div>
   </div>
 
-  <!-- 호흡 가이드 텍스트 타이머 & 메인 모듈 로드 -->
+  <!-- 호흡 가이드 텍스트 타이머 스크립트 -->
   <script>
     const guideText = document.getElementById('breathing-guide-text');
     let breathPhase = 0;
@@ -90,6 +83,8 @@
       }
     }, 3000);
   </script>
-  <script type="module" src="src/main.js"></script>
+
+  <!-- 메인 애플리케이션 번들 (file:// 직접 더블클릭 실행 지원) -->
+  <script src="app.js"></script>
 </body>
 </html>

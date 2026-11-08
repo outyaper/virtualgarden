@@ -9,6 +9,7 @@ import { Avatar } from './character/avatar.js';
 import { TPSCamera } from './controls/tpsCamera.js';
 import { SoundManager } from './audio/soundManager.js';
 import { WildlifeManager } from './world/wildlife.js';
+import { PedestrianManager } from './world/pedestrianManager.js';
 
 class App {
   constructor() {
@@ -56,6 +57,7 @@ class App {
     this.bamboo = new BambooForest(this.scene, this.terrain);
     this.bench = new Bench(this.scene, this.terrain);
     this.wildlife = new WildlifeManager(this.scene, this.terrain);
+    this.pedestrians = new PedestrianManager(this.scene, this.terrain);
     this.atmosphere = new Atmosphere(this.scene);
     this.avatar = new Avatar(this.scene, this.terrain);
     this.tpsCamera = new TPSCamera(this.camera, this.renderer.domElement);
@@ -246,6 +248,7 @@ class App {
     this.river.update(delta);
     this.bamboo.update(delta);
     this.wildlife.update(delta, this.avatar.position);
+    this.pedestrians.update(delta);
     this.atmosphere.update(delta);
 
     if (!this.avatar.isSitting) {

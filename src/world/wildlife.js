@@ -9,9 +9,9 @@ export class WildlifeManager {
     this.flyingBirds = [];
     this.groundBirds = [];
 
-    this.initRabbits(3);
+    this.initRabbits(5);
     this.initFlyingBirds(4);
-    this.initGroundBirds(3);
+    this.initGroundBirds(4);
   }
 
   // ==========================================
@@ -55,7 +55,7 @@ export class WildlifeManager {
     nose.position.set(0, 0.01, 0.13);
     head.add(nose);
 
-    // 쫑긋한 귀 (좌/우)
+    // 귀 (좌/우)
     const earGeo = new THREE.CylinderGeometry(0.025, 0.04, 0.2, 8);
     earGeo.translate(0, 0.1, 0);
 
@@ -79,14 +79,14 @@ export class WildlifeManager {
     rightInnerEar.position.set(0, 0.1, 0.025);
     rightEar.add(rightInnerEar);
 
-    // 꼬리 (솜뭉치 폼폼)
+    // 꼬리
     const tailGeo = new THREE.SphereGeometry(0.06, 8, 8);
     const tail = new THREE.Mesh(tailGeo, furMat);
     tail.position.set(0, 0.18, -0.24);
     group.add(tail);
 
-    group.scale.set(0.9, 0.9, 0.9);
-    return { group, head, leftEar, rightEar };
+    group.scale.set(0.85, 0.85, 0.85);
+    return { group, head, leftEar, rightEar, body };
   }
 
   initRabbits(count) {
@@ -95,17 +95,18 @@ export class WildlifeManager {
       const rabbit = {
         mesh: rabbitMesh.group,
         head: rabbitMesh.head,
+        body: rabbitMesh.body,
         leftEar: rabbitMesh.leftEar,
         rightEar: rabbitMesh.rightEar,
         x: 0,
         z: 0,
+        state: 'sitting', // 'sitting' | 'hopping' | 'fleeing'
+        fleeDir: new THREE.Vector2(),
+        hopTimer: 0,
+        sitTimer: 2.0 + Math.random() * 5.0,
         targetX: 0,
         targetZ: 0,
-        speed: 1.8 + Math.random() * 0.8,
-        hopTimer: Math.random() * 10,
-        isHopping: false,
-        pauseTimer: 0,
-        active: false
+        alertness: 0
       };
       this.respawnRabbit(rabbit);
       this.rabbits.push(rabbit);
@@ -114,17 +115,13 @@ export class WildlifeManager {
   }
 
   respawnRabbit(rabbit) {
-    // 숲속 또는 산책로 주변에서 스폰
-    const side = Math.random() > 0.5 ? 1 : -1;
-    rabbit.x = side > 0 ? (10 + Math.random() * 30) : (-5 + Math.random() * 6);
-    rabbit.z = (Math.random() - 0.5) * 80;
+    // 산책로 주변 풀밭이나 숲속에 스폰
+    rabbit.x = -5 + Math.random() * 35;
+    rabbit.z = (Math.random() - 0.5) * 90;
+    rabbit.state = 'sitting';
+    rabbit.sitTimer = 3.0 + Math.random() * 6.0;
+    rabbit.mesh.rotation.y = Math.random() * Math.PI * 2;
 
-    // 반대편 또는 숲속 다른 지점으로 이동
-    rabbit.targetX = side > 0 ? (-8 + Math.random() * 4) : (15 + Math.random() * 25);
-    rabbit.targetZ = rabbit.z + (Math.random() - 0.5) * 30;
-
-    rabbit.active = true;
-    rabbit.pauseTimer = Math.random() * 3;
     const y = this.terrain.getHeight(rabbit.x, rabbit.z);
     rabbit.mesh.position.set(rabbit.x, y, rabbit.z);
   }
@@ -137,38 +134,33 @@ export class WildlifeManager {
     const bodyMat = new THREE.MeshStandardMaterial({ color: 0x486b5e, roughness: 0.7 });
     const wingMat = new THREE.MeshStandardMaterial({ color: 0x324d43, roughness: 0.8, side: THREE.DoubleSide });
     const beakMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
 
-    // 몸통
-    const bodyGeo = new THREE.ConeGeometry(0.1, 0.35, 6);
+    const bodyGeo = new THREE.ConeGeometry(0.09, 0.32, 6);
     bodyGeo.rotateX(Math.PI / 2);
     const body = new THREE.Mesh(bodyGeo, bodyMat);
     group.add(body);
 
-    // 머리
-    const headGeo = new THREE.SphereGeometry(0.08, 8, 8);
+    const headGeo = new THREE.SphereGeometry(0.075, 8, 8);
     const head = new THREE.Mesh(headGeo, bodyMat);
-    head.position.set(0, 0.05, 0.16);
+    head.position.set(0, 0.05, 0.15);
     group.add(head);
 
-    // 부리
-    const beakGeo = new THREE.ConeGeometry(0.03, 0.09, 4);
+    const beakGeo = new THREE.ConeGeometry(0.025, 0.08, 4);
     beakGeo.rotateX(Math.PI / 2);
     const beak = new THREE.Mesh(beakGeo, beakMat);
-    beak.position.set(0, 0.04, 0.26);
+    beak.position.set(0, 0.04, 0.24);
     group.add(beak);
 
-    // 날개 (좌/우)
-    const wingGeo = new THREE.PlaneGeometry(0.35, 0.16);
-    wingGeo.translate(0.18, 0, 0);
+    const wingGeo = new THREE.PlaneGeometry(0.32, 0.15);
+    wingGeo.translate(0.16, 0, 0);
 
     const leftWing = new THREE.Mesh(wingGeo, wingMat);
-    leftWing.position.set(0.06, 0.05, 0.02);
+    leftWing.position.set(0.05, 0.05, 0.02);
     group.add(leftWing);
 
     const rightWing = new THREE.Mesh(wingGeo, wingMat);
     rightWing.rotation.y = Math.PI;
-    rightWing.position.set(-0.06, 0.05, 0.02);
+    rightWing.position.set(-0.05, 0.05, 0.02);
     group.add(rightWing);
 
     return { group, leftWing, rightWing };
@@ -184,7 +176,7 @@ export class WildlifeManager {
         x: 0,
         y: 0,
         z: 0,
-        speed: 7.5 + Math.random() * 4.0,
+        speed: 7.0 + Math.random() * 3.5,
         flightAngle: 0,
         flapSpeed: 14 + Math.random() * 4,
         animTime: Math.random() * 10
@@ -196,32 +188,31 @@ export class WildlifeManager {
   }
 
   respawnFlyingBird(bird) {
-    // 숲 한쪽 상공에서 출발
     const angle = (Math.random() - 0.5) * Math.PI * 0.8;
     bird.flightAngle = angle;
     bird.x = -15 + Math.random() * 10;
     bird.z = -75 + Math.random() * 150;
-    bird.y = 4.5 + Math.random() * 5.5;
+    bird.y = 4.0 + Math.random() * 5.0;
 
     bird.mesh.position.set(bird.x, bird.y, bird.z);
     bird.mesh.rotation.y = Math.atan2(Math.sin(angle), Math.cos(angle)) + Math.PI / 2;
   }
 
   // ==========================================
-  // 3. 지상 모이 쪼는 새 (Ground Birds)
+  // 3. 지상 모이 쪼는 참새 (Ground Birds)
   // ==========================================
   initGroundBirds(count) {
     for (let i = 0; i < count; i++) {
       const birdMesh = this.createBirdMesh();
-      birdMesh.group.scale.set(0.8, 0.8, 0.8);
+      birdMesh.group.scale.set(0.75, 0.75, 0.75);
       const bird = {
         mesh: birdMesh.group,
         leftWing: birdMesh.leftWing,
         rightWing: birdMesh.rightWing,
-        x: -5 + Math.random() * 15,
-        z: (Math.random() - 0.5) * 50,
+        x: -6 + Math.random() * 18,
+        z: (Math.random() - 0.5) * 60,
         peckTimer: Math.random() * 4,
-        isFlushed: false, // 플레이어 접근 시 도망 플래그
+        isFlushed: false,
         flushVelocity: new THREE.Vector3()
       };
       const y = this.terrain.getHeight(bird.x, bird.z);
@@ -232,51 +223,105 @@ export class WildlifeManager {
   }
 
   // ==========================================
-  // 전체 업데이트 루프
+  // 메인 업데이트 루프
   // ==========================================
   update(delta, playerPos) {
-    // 1. 토끼 깡총깡총 애니메이션 및 AI
+    const now = Date.now() * 0.001;
+
+    // 1. 토끼 AI (평소에는 가만히 앉아있다가 캐릭터 접근 시 도망)
     for (const rabbit of this.rabbits) {
-      if (!rabbit.active) continue;
+      const dxToPlayer = rabbit.x - playerPos.x;
+      const dzToPlayer = rabbit.z - playerPos.z;
+      const distToPlayer = Math.sqrt(dxToPlayer * dxToPlayer + dzToPlayer * dzToPlayer);
 
-      if (rabbit.pauseTimer > 0) {
-        rabbit.pauseTimer -= delta;
-        // 멈춰 서서 귀 쫑긋거리기
-        rabbit.leftEar.rotation.z = -0.15 + Math.sin(Date.now() * 0.006) * 0.08;
-        rabbit.rightEar.rotation.z = 0.15 + Math.cos(Date.now() * 0.006) * 0.08;
-        continue;
+      // 플레이어가 4.6m 이내로 접근하면 도망치기(Flee) 모드 전환!
+      if (distToPlayer < 4.6) {
+        if (rabbit.state !== 'fleeing') {
+          rabbit.state = 'fleeing';
+          // 플레이어의 반대 방향으로 도망 벡터 설정
+          rabbit.fleeDir.set(dxToPlayer, dzToPlayer).normalize();
+          // 약간의 무작위 숲속 방향 가미
+          rabbit.fleeDir.x += (Math.random() - 0.3) * 0.4;
+          rabbit.fleeDir.y += (Math.random() - 0.5) * 0.4;
+          rabbit.fleeDir.normalize();
+        }
       }
 
-      const dx = rabbit.targetX - rabbit.x;
-      const dz = rabbit.targetZ - rabbit.z;
-      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (rabbit.state === 'sitting') {
+        rabbit.sitTimer -= delta;
 
-      if (dist < 1.0) {
-        // 목표 도착 시 잠시 휴식 후 새 목적지
-        rabbit.pauseTimer = 2.0 + Math.random() * 3.0;
-        this.respawnRabbit(rabbit);
-        continue;
+        // 가만히 앉아 숨쉬기 & 귀/고개 쫑긋거리기
+        const breathe = Math.sin(now * 3.5) * 0.01;
+        rabbit.head.position.y = 0.28 + breathe;
+        rabbit.leftEar.rotation.z = -0.15 + Math.sin(now * 2.0) * 0.12;
+        rabbit.rightEar.rotation.z = 0.15 + Math.cos(now * 2.2) * 0.12;
+
+        // 일정 시간 앉아있은 후 아주 가끔 한두 걸음 가볍게 이동
+        if (rabbit.sitTimer <= 0) {
+          rabbit.state = 'hopping';
+          rabbit.hopTimer = 0;
+          // 주변 1.5m 이내로 짧게 이동
+          const randAngle = Math.random() * Math.PI * 2;
+          rabbit.targetX = rabbit.x + Math.cos(randAngle) * 1.5;
+          rabbit.targetZ = rabbit.z + Math.sin(randAngle) * 1.5;
+          rabbit.sitTimer = 4.0 + Math.random() * 6.0;
+        }
+      } else if (rabbit.state === 'hopping') {
+        // 평화로운 짧은 깡총 이동
+        rabbit.hopTimer += delta * 6.0;
+        const dx = rabbit.targetX - rabbit.x;
+        const dz = rabbit.targetZ - rabbit.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+
+        if (dist < 0.2 || rabbit.hopTimer > Math.PI * 2) {
+          rabbit.state = 'sitting';
+          const groundY = this.terrain.getHeight(rabbit.x, rabbit.z);
+          rabbit.mesh.position.y = groundY;
+          continue;
+        }
+
+        rabbit.mesh.rotation.y = Math.atan2(dx, dz);
+        const hopY = Math.abs(Math.sin(rabbit.hopTimer)) * 0.18;
+        const speed = 1.6;
+        rabbit.x += (dx / dist) * speed * delta;
+        rabbit.z += (dz / dist) * speed * delta;
+
+        const groundY = this.terrain.getHeight(rabbit.x, rabbit.z);
+        rabbit.mesh.position.set(rabbit.x, groundY + hopY, rabbit.z);
+      } else if (rabbit.state === 'fleeing') {
+        // 캐릭터를 피해 펄쩍펄쩍 쏜살같이 도망치기!
+        rabbit.hopTimer += delta * 11.5; // 매우 빠른 깡총 템포
+        const fleeSpeed = 5.2;
+
+        rabbit.x += rabbit.fleeDir.x * fleeSpeed * delta;
+        rabbit.z += rabbit.fleeDir.y * fleeSpeed * delta;
+
+        // 도망 방향 바라보기
+        rabbit.mesh.rotation.y = Math.atan2(rabbit.fleeDir.x, rabbit.fleeDir.y);
+
+        // 높은 점프 & 귀 펄럭임
+        const hopY = Math.abs(Math.sin(rabbit.hopTimer)) * 0.32;
+        const groundY = this.terrain.getHeight(rabbit.x, rabbit.z);
+        rabbit.mesh.position.set(rabbit.x, groundY + hopY, rabbit.z);
+
+        const earFlap = Math.sin(rabbit.hopTimer) * 0.45;
+        rabbit.leftEar.rotation.x = -0.4 - earFlap;
+        rabbit.rightEar.rotation.x = -0.4 - earFlap;
+
+        // 플레이어와 충분히 멀어지면(8.5m 이상) 다시 멈추어 앉기
+        if (distToPlayer > 8.5) {
+          rabbit.state = 'sitting';
+          rabbit.sitTimer = 5.0 + Math.random() * 5.0;
+          rabbit.mesh.position.y = groundY;
+          rabbit.leftEar.rotation.x = -0.2;
+          rabbit.rightEar.rotation.x = -0.2;
+        }
+
+        // 맵 가장자리로 너무 멀리 가면 리스폰
+        if (rabbit.x > 55 || rabbit.x < -10 || rabbit.z > 70 || rabbit.z < -70) {
+          this.respawnRabbit(rabbit);
+        }
       }
-
-      // 회전
-      const targetRotY = Math.atan2(dx, dz);
-      rabbit.mesh.rotation.y = targetRotY;
-
-      // 깡총 점프 모션 (Hop arc)
-      rabbit.hopTimer += delta * 7.0;
-      const hopY = Math.abs(Math.sin(rabbit.hopTimer)) * 0.22;
-      const step = (rabbit.speed * delta);
-
-      rabbit.x += (dx / dist) * step;
-      rabbit.z += (dz / dist) * step;
-
-      const groundY = this.terrain.getHeight(rabbit.x, rabbit.z);
-      rabbit.mesh.position.set(rabbit.x, groundY + hopY, rabbit.z);
-
-      // 점프할 때 귀 펄럭임
-      const earFlap = Math.sin(rabbit.hopTimer) * 0.25;
-      rabbit.leftEar.rotation.x = -0.2 - earFlap;
-      rabbit.rightEar.rotation.x = -0.2 - earFlap;
     }
 
     // 2. 비행하는 새 애니메이션
@@ -288,18 +333,15 @@ export class WildlifeManager {
       bird.x += moveX;
       bird.z += moveZ;
 
-      // 상하 완만한 부유
       const waveY = Math.sin(bird.animTime * 2.0) * 0.015;
       bird.y += waveY;
 
       bird.mesh.position.set(bird.x, bird.y, bird.z);
 
-      // 날개 파닥이기
       const flap = Math.sin(bird.animTime * bird.flapSpeed) * 0.7;
       bird.leftWing.rotation.z = flap;
       bird.rightWing.rotation.z = -flap;
 
-      // 맵 밖으로 벗어나면 리스폰
       if (bird.x > 65 || bird.x < -30 || bird.z > 80 || bird.z < -80) {
         this.respawnFlyingBird(bird);
       }
@@ -308,37 +350,33 @@ export class WildlifeManager {
     // 3. 지상 참새 (플레이어 감지 시 푸드득 날아감)
     for (const bird of this.groundBirds) {
       if (bird.isFlushed) {
-        // 날아가기
         bird.mesh.position.addScaledVector(bird.flushVelocity, delta);
-        const flap = Math.sin(Date.now() * 0.03) * 0.8;
+        const flap = Math.sin(Date.now() * 0.035) * 0.85;
         bird.leftWing.rotation.z = flap;
         bird.rightWing.rotation.z = -flap;
 
-        if (bird.mesh.position.y > 16) {
-          // 멀리 날아가면 리셋
+        if (bird.mesh.position.y > 15) {
           bird.isFlushed = false;
-          bird.x = -6 + Math.random() * 20;
+          bird.x = -5 + Math.random() * 22;
           bird.z = (Math.random() - 0.5) * 60;
           const y = this.terrain.getHeight(bird.x, bird.z);
           bird.mesh.position.set(bird.x, y + 0.1, bird.z);
         }
       } else {
-        // 지상 모이 쪼기 & 플레이어 거리 체크
         const distToPlayer = bird.mesh.position.distanceTo(playerPos);
-        if (distToPlayer < 4.0) {
-          // 플레이어가 다가오면 푸드득 날아감!
+        if (distToPlayer < 4.2) {
+          // 캐릭터가 다가오면 짹짹거리며 푸드득 날아오름
           bird.isFlushed = true;
           bird.flushVelocity.set(
-            (Math.random() - 0.5) * 6,
-            4.0 + Math.random() * 3,
-            (Math.random() - 0.5) * 6
+            (Math.random() - 0.5) * 7,
+            4.5 + Math.random() * 3.5,
+            (Math.random() - 0.5) * 7
           );
           bird.mesh.rotation.y = Math.atan2(bird.flushVelocity.x, bird.flushVelocity.z);
         } else {
-          // 콕콕 모이 쪼기 애니메이션
           bird.peckTimer += delta;
-          if (Math.sin(bird.peckTimer * 5.0) > 0.7) {
-            bird.mesh.rotation.x = 0.45; // 고개 숙여 모이 쪼기
+          if (Math.sin(bird.peckTimer * 5.0) > 0.65) {
+            bird.mesh.rotation.x = 0.45;
           } else {
             bird.mesh.rotation.x = 0;
           }

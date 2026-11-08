@@ -99,9 +99,9 @@ export class Terrain {
 
     const pos = geometry.attributes.position;
     const colors = [];
-    const colorGrass = new THREE.Color(0x3e6b35); // 짙은 초록 잔디
-    const colorPath = new THREE.Color(0xc7ab7e);  // 따뜻한 황토 흙길
-    const colorBank = new THREE.Color(0x5a6344);  // 강변 자갈/모래
+    const colorGrass = new THREE.Color(0x274d2b); // 짙고 아늑한 숲속 잔디
+    const colorPath = new THREE.Color(0xa18762);  // 차분한 황토 흙길
+    const colorBank = new THREE.Color(0x4a543b);
 
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i);
